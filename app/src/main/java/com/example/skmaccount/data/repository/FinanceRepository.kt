@@ -59,6 +59,10 @@ class FinanceRepository(
 
     val allCategoryBudgets: Flow<List<Budget>> = budgetDao.getAllCategoryBudgets()
 
+    fun getAllBudgets(): Flow<List<Budget>> {
+        return budgetDao.getAllBudgets()
+    }
+
     suspend fun insertBudget(budget: Budget) {
         withContext(Dispatchers.IO) { budgetDao.insertBudget(budget) }
     }

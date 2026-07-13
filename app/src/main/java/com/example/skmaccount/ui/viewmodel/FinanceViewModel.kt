@@ -18,14 +18,28 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
     val allCategories: StateFlow<List<Category>> = repository.allCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val overallBudget: StateFlow<Budget?> = repository.overallBudget
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val allCategoryBudgets: StateFlow<List<Budget>> = repository.allCategoryBudgets
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     private val _currentMonthSelected = MutableStateFlow(Calendar.getInstance())
     val currentMonthSelected: StateFlow<Calendar> = _currentMonthSelected
+
+    // Load all budgets from repository
+    val allBudgets: StateFlow<List<Budget>> = repository.getAllBudgets()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Derives current month's overall budget dynamically
+    val overallBudget: StateFlow<Budget?> = combine(
+        allBudgets, _currentMonthSelected
+    ) { budgets, cal ->
+        val (s, e) = getStartAndEndOfMonth(cal)
+        budgets.find { it.categoryId == null && it.startDate >= s && it.endDate <= e }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    // Derives current month's category-level budgets dynamically
+    val allCategoryBudgets: StateFlow<List<Budget>> = combine(
+        allBudgets, _currentMonthSelected
+    ) { budgets, cal ->
+        val (s, e) = getStartAndEndOfMonth(cal)
+        budgets.filter { it.categoryId != null && it.startDate >= s && it.endDate <= e }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private fun getStartAndEndOfMonth(calendar: Calendar): Pair<Long, Long> {
         val cal = calendar.clone() as Calendar
@@ -135,11 +149,11 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
 
     fun setOverallBudget(amount: Double) {
         viewModelScope.launch {
-            val existing = overallBudget.value
+            val (s, e) = getStartAndEndOfMonth(_currentMonthSelected.value)
+            val existing = allBudgets.value.find { it.categoryId == null && it.startDate >= s && it.endDate <= e }
             if (existing != null) {
                 repository.updateBudget(existing.copy(limitAmount = amount))
             } else {
-                val (s, e) = getStartAndEndOfMonth(_currentMonthSelected.value)
                 repository.insertBudget(Budget(limitAmount = amount, startDate = s, endDate = e, categoryId = null))
             }
         }
@@ -147,11 +161,11 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
 
     fun setCategoryBudget(categoryId: Int, amount: Double) {
         viewModelScope.launch {
-            val existing = allCategoryBudgets.value.find { it.categoryId == categoryId }
+            val (s, e) = getStartAndEndOfMonth(_currentMonthSelected.value)
+            val existing = allBudgets.value.find { it.categoryId == categoryId && it.startDate >= s && it.endDate <= e }
             if (existing != null) {
                 repository.updateBudget(existing.copy(limitAmount = amount))
             } else {
-                val (s, e) = getStartAndEndOfMonth(_currentMonthSelected.value)
                 repository.insertBudget(Budget(limitAmount = amount, startDate = s, endDate = e, categoryId = categoryId))
             }
         }

@@ -58,6 +58,9 @@ interface BudgetDao {
     @Query("SELECT * FROM budgets WHERE categoryId IS NOT NULL")
     fun getAllCategoryBudgets(): Flow<List<Budget>>
 
+    @Query("SELECT * FROM budgets")
+    fun getAllBudgets(): Flow<List<Budget>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertBudget(budget: Budget)
 
