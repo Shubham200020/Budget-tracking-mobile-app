@@ -59,6 +59,9 @@ dependencies {
     // DataStore for onboarding preferences
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Biometric Authentication
+    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+
     // Vico Charts for Jetpack Compose
     implementation(libs.vico.compose.m3)
 

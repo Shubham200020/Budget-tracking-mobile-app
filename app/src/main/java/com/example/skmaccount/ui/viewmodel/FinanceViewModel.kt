@@ -159,6 +159,18 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
         viewModelScope.launch { repository.deleteExpense(expense) }
     }
 
+    fun addCategory(name: String, iconName: String, colorHex: String) {
+        viewModelScope.launch {
+            repository.insertCategory(
+                com.example.skmaccount.data.model.Category(
+                    name = name,
+                    iconName = iconName,
+                    colorHex = colorHex
+                )
+            )
+        }
+    }
+
     fun setOverallBudget(amount: Double) {
         viewModelScope.launch {
             val (s, e) = getStartAndEndOfMonth(_currentMonthSelected.value)
