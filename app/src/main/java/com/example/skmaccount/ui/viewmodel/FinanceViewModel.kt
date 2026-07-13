@@ -16,14 +16,14 @@ import java.util.Calendar
 class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() {
 
     val allCategories: StateFlow<List<Category>> = repository.allCategories
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private val _currentMonthSelected = MutableStateFlow(Calendar.getInstance())
     val currentMonthSelected: StateFlow<Calendar> = _currentMonthSelected
 
     // Load all budgets from repository
     val allBudgets: StateFlow<List<Budget>> = repository.getAllBudgets()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Derives current month's overall budget dynamically
     val overallBudget: StateFlow<Budget?> = combine(
@@ -31,7 +31,7 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
     ) { budgets, cal ->
         val (s, e) = getStartAndEndOfMonth(cal)
         budgets.find { it.categoryId == null && it.startDate >= s && it.endDate <= e }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     // Derives current month's category-level budgets dynamically
     val allCategoryBudgets: StateFlow<List<Budget>> = combine(
@@ -39,7 +39,7 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
     ) { budgets, cal ->
         val (s, e) = getStartAndEndOfMonth(cal)
         budgets.filter { it.categoryId != null && it.startDate >= s && it.endDate <= e }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     private fun getStartAndEndOfMonth(calendar: Calendar): Pair<Long, Long> {
         val cal = calendar.clone() as Calendar
@@ -58,23 +58,23 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
             val (s, e) = getStartAndEndOfMonth(cal)
             repository.getExpensesBetweenDates(s, e)
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     // Only spending (isIncome == false)
     val currentMonthTotalSpent: StateFlow<Double> = currentMonthExpenses
         .map { list -> list.filter { !it.isIncome }.sumOf { it.amount } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     // Only income (isIncome == true)
     val currentMonthTotalIncome: StateFlow<Double> = currentMonthExpenses
         .map { list -> list.filter { it.isIncome }.sumOf { it.amount } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     // Net balance = income - spending
     val currentMonthNetBalance: StateFlow<Double> = combine(
         currentMonthTotalIncome, currentMonthTotalSpent
     ) { income, spent -> income - spent }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
     // Category breakdowns (expenses only) for current month
     val categoryBreakdowns: StateFlow<Map<Int, Double>> = currentMonthExpenses
@@ -83,7 +83,7 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
                 .groupBy { it.categoryId }
                 .mapValues { e -> e.value.sumOf { it.amount } }
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     // Data class for 6-month bar chart
     data class MonthSummary(val label: String, val income: Float, val spent: Float)
@@ -130,6 +130,18 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
 
     fun addExpense(amount: Double, categoryId: Int, title: String, note: String = "", isIncome: Boolean = false) {
         viewModelScope.launch {
+            val targetCal = Calendar.getInstance()
+            val selectedCal = _currentMonthSelected.value
+            
+            // If the selected month is different from the current real month,
+            // set the date to the 1st day of the selected month to preserve context.
+            if (targetCal.get(Calendar.YEAR) != selectedCal.get(Calendar.YEAR) ||
+                targetCal.get(Calendar.MONTH) != selectedCal.get(Calendar.MONTH)) {
+                targetCal.set(Calendar.YEAR, selectedCal.get(Calendar.YEAR))
+                targetCal.set(Calendar.MONTH, selectedCal.get(Calendar.MONTH))
+                targetCal.set(Calendar.DAY_OF_MONTH, 1)
+            }
+            
             repository.insertExpense(
                 Expense(
                     amount = amount,
@@ -137,7 +149,7 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
                     title = title,
                     note = note,
                     isIncome = isIncome,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = targetCal.timeInMillis
                 )
             )
         }
