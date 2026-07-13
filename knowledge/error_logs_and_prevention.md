@@ -32,3 +32,17 @@ The new APK fails to install on the physical device because a previous partial o
 **Prevention/Resolution:**
 - **Resolution:** Manually uninstall the corrupted app package from the device via ADB: `adb uninstall com.example.skmaccount`.
 - **Prevention:** Avoid disconnecting the device during a Gradle deployment. If the app begins behaving erratically or fails to install, a complete uninstall is the safest and fastest way to restore a clean deployment state.
+
+## 4. Jetpack Compose Transitive Version Mismatch (`NoSuchMethodError`)
+**Description:**
+The app crashed instantly upon launching the `OnboardingScreen` with the fatal exception:
+`java.lang.NoSuchMethodError: No static method HorizontalPager-xYaah8o(...)V in class Landroidx/compose/foundation/pager/PagerKt;`
+**Symptom:**
+This occurs when a new dependency (like `androidx.biometric`) transitively pulls in a newer version of a Compose module (e.g., `foundation:1.7.4`), while another module (e.g., `material3:1.2.1`) remains strictly locked. The compiler and runtime environment fall out of sync on method signatures.
+**Prevention/Resolution:**
+- **Resolution:** Explicitly force the transitive dependencies to match the expected BOM or locked versions in `build.gradle.kts`. In this case, we added:
+  ```kotlin
+  force("androidx.compose.foundation:foundation:1.6.0")
+  force("androidx.compose.foundation:foundation-android:1.6.0")
+  ```
+- **Prevention:** Whenever adding new libraries, monitor the dependency tree (`.\gradlew.bat :app:dependencies`) to catch unexpected version bumps in core UI components, and lock versions using `resolutionStrategy` in `build.gradle.kts`.

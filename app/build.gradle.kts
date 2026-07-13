@@ -60,7 +60,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // Biometric Authentication
-    implementation("androidx.biometric:biometric:1.2.0-alpha05")
+    implementation("androidx.biometric:biometric:1.1.0")
 
     // Vico Charts for Jetpack Compose
     implementation(libs.vico.compose.m3)
@@ -80,5 +80,7 @@ configurations.all {
     resolutionStrategy {
         force("androidx.compose.material3:material3:1.2.1")
         force("androidx.compose.material3:material3-android:1.2.1")
+        force("androidx.compose.foundation:foundation:1.6.0")
+        force("androidx.compose.foundation:foundation-android:1.6.0")
     }
 }
