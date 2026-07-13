@@ -86,7 +86,7 @@ fun DashboardScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onNavigateToAddExpense, containerColor = EmeraldGreen) {
-                Icon(Icons.Filled.Add, contentDescription = "Add", tint = Color.Black)
+                Icon(Icons.Filled.Add, contentDescription = "Add Transaction", tint = Color.Black)
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -96,7 +96,7 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Month Selector
@@ -146,17 +146,7 @@ fun DashboardScreen(
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(CategoryHelper.formatCurrency(totalSpent), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("of ${CategoryHelper.formatCurrency(budgetAmount)}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                            Spacer(Modifier.width(4.dp))
-                            Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edit Budget",
-                                modifier = Modifier.size(16.dp).clickable {
-                                    dialogTitle = "Set Monthly Budget"
-                                    dialogInitialAmount = budgetAmount
-                                    onDialogSave = { amt -> viewModel.setOverallBudget(amt) }
-                                    showBudgetDialog = true
-                                }, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                        }
+                        Text("of ${CategoryHelper.formatCurrency(budgetAmount)}", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                     }
                 }
             }
