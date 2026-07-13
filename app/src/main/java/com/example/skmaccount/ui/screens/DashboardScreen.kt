@@ -60,7 +60,7 @@ fun DashboardScreen(
     var dialogInitialAmount by remember { mutableStateOf(10000.0) }
     var onDialogSave by remember { mutableStateOf<(Double) -> Unit>({}) }
 
-    val budgetAmount = budget?.limitAmount ?: 10000.0
+    val budgetAmount = totalIncome
     val progress = if (budgetAmount > 0) (totalSpent / budgetAmount).coerceIn(0.0, 1.0).toFloat() else 0f
     val isOverBudget = totalSpent > budgetAmount
     val progressColor = if (isOverBudget) CoralRed else EmeraldGreen
@@ -96,6 +96,7 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             contentPadding = PaddingValues(bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
